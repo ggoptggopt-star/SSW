@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Submission Portal — Minimal &amp; Elevated</title>
+  <!-- Google Fonts: Playfair Display, Cormorant Garamond, Plus Jakarta Sans, Noto Sans Thai -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Supabase JS Client & JSZip for Bulk ZIP Download -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===================================================================== -->
+  <!-- TOP UTILITY & QUICK DEMO BAR (Switch Views, Quick Account Switch, DB) -->
+  <!-- ===================================================================== -->
+  <div class="top-utility-bar">
+    <div class="top-utility-inner">
+      <div class="utility-brand">
+        <span class="utility-dot"></span>
+        <span class="utility-serif">MINIMAL &amp; ELEVATED</span>
+        <span class="utility-sep">|</span>
+        <span class="utility-sub">Student Submission Portal</span>
+      </div>
+
+      <!-- Quick Role Switcher & DB Status -->
+      <div class="utility-right-actions">
+        <div class="quick-role-switch" title="สลับบัญชีเพื่อทดสอบระบบได้ทันที">
+          <span class="role-label">ทดสอบในฐานะ:</span>
+          <button class="role-chip active" id="quickStudentBtn" type="button">นักศึกษา (Sarah)</button>
+          <button class="role-chip" id="quickStudent2Btn" type="button">นักศึกษา 2 (Namo)</button>
+          <button class="role-chip" id="quickTeacherBtn" type="button">อาจารย์ผู้สอน</button>
+        </div>
+        <button class="db-status-btn" id="openDbConfigBtn" type="button" title="ตั้งค่าฐานข้อมูล Supabase">
+          <span class="db-indicator" id="dbStatusDot"></span>
+          <span id="dbStatusText">โหมดพร้อมใช้ (Local + Supabase)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN DEVICE WRAPPER (Adapts between Full Desktop & Mobile Mockup)     -->
+  <!-- ===================================================================== -->
+  <div id="deviceStage" class="device-stage">
+    <div id="appContainer" class="app-shell">
+
+      <!-- LEFT SIDEBAR (Desktop Navigation matching Image 2) -->
+      <aside class="sidebar" id="mainSidebar">
+        <div class="sidebar-top">
+          <div class="sidebar-brand-block">
+            <div class="brand-monogram">V</div>
+            <div>
+              <p class="brand-eyebrow">COURSE PORTAL</p>
+              <p class="brand-course-code" id="sidebarCourseCode">DES-101 • Visual Design</p>
+            </div>
+          </div>
+
+          <nav class="sidebar-nav" aria-label="เมนูหลัก">
+            <button class="nav-item active" data-tab="dashboard" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+              </svg>
+              <span>Dashboard</span>
+            </button>
+
+            <button class="nav-item" data-tab="assignments" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="8" y1="13" x2="16" y2="13"></line>
+                <line x1="8" y1="17" x2="13" y2="17"></line>
+              </svg>
+              <span>Assignments</span>
+              <span class="nav-counter" id="navPendingCount">2</span>
+            </button>
+
+            <button class="nav-item" data-tab="grades" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+              <span>Grades</span>
+            </button>
+
+            <!-- Instructor Menu Item (แสดงเฉพาะเมื่อเข้าสู่ระบบเป็นอาจารย์ผู้สอนเท่านั้น) -->
+            <button class="nav-item teacher-only-nav" id="navInstructorBtn" data-tab="instructor" type="button" hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+              <span>จัดการใบงาน / ตรวจงาน</span>
+              <span class="teacher-pill">อาจารย์</span>
+            </button>
+
+            <button class="nav-item" data-tab="profile" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="sidebar-bottom">
+          <div class="current-role-banner" id="sidebarRoleBanner">
+            <span class="role-dot"></span>
+            <span id="sidebarRoleText">สถานะ: นักศึกษา</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- MAIN WORKSPACE -->
+      <main class="main-workspace">
+
+        <!-- TOP HEADER (Matches both Mobile hamburger + Desktop Welcome back, Sarah + Bell) -->
+        <header class="workspace-header">
+          <div class="header-left">
+            <button class="hamburger-btn" id="mobileDrawerBtn" type="button" aria-label="เปิดเมนู">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="16" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
+            <div class="header-status-pills">
+              <span class="semester-pill" id="headerSemesterText">ภาคการศึกษา 1/2569</span>
+              <span class="student-id-pill" id="headerStudentIdBadge">รหัส: 67010101</span>
+            </div>
+          </div>
+
+          <div class="header-right">
+            <!-- Notification Bell Button + Popover -->
+            <div class="notification-wrapper">
+              <button class="bell-btn" id="bellToggleBtn" type="button" aria-label="เปิดการแจ้งเตือน">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="bell-unread-dot" id="bellUnreadDot"></span>
+                <span class="bell-unread-count" id="bellUnreadCount">3</span>
+              </button>
+
+              <!-- Notification Dropdown Panel -->
+              <div class="notification-popover" id="notificationPopover" aria-hidden="true">
+                <div class="notif-popover-header">
+                  <div>
+                    <h4>การแจ้งเตือน (Notifications)</h4>
+                    <p>งานใหม่ • ใกล้ครบกำหนดส่ง • ผลคะแนน</p>
+                  </div>
+                  <button class="mark-read-btn" id="markAllReadBtn" type="button">อ่านทั้งหมดแล้ว</button>
+                </div>
+                <ul class="notif-list" id="notificationList">
+                  <!-- Populated by app.js -->
+                </ul>
+              </div>
+            </div>
+
+            <!-- ปุ่ม เข้าสู่ระบบ / ลงทะเบียน (แสดงขึ้นมาแทนโปรไฟล์เมื่อกดออกจากระบบ ตามภาพตัวอย่าง) -->
+            <button type="button" class="header-auth-pill-btn" id="headerGuestAuthBtn" hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span>เข้าสู่ระบบ / สมัครสมาชิก</span>
+            </button>
+
+            <!-- User Profile Trigger + Compact Dropdown Menu (แสดงเมื่อเข้าสู่ระบบอยู่) -->
+            <div class="profile-dropdown-wrapper" id="headerProfileDropdownWrap">
+              <div class="user-profile-chip" id="headerProfileChip" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" title="คลิกเพื่อเปิดเมนูโปรไฟล์">
+                <div class="user-greeting-text">
+                  <span class="welcome-label">Welcome back,</span>
+                  <strong class="user-display-name" id="headerUserName">Sarah</strong>
+                </div>
+                <div class="user-avatar-wrap">
+                  <img id="headerUserAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="User Avatar" />
+                </div>
+              </div>
+
+              <!-- Compact Profile Menu Popover (ดูหน้าโปรไฟล์ + เข้าสู่ระบบ/สมัครสมาชิกใหม่ + Log Out) -->
+              <div class="profile-menu-popover" id="profileMenuPopover" aria-hidden="true">
+                <div class="profile-popover-top">
+                  <img id="popoverUserAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="User Avatar" class="popover-avatar-img" />
+                  <div class="popover-user-info">
+                    <strong class="popover-user-name" id="popoverUserName">Sarah Jenkins</strong>
+                    <span class="popover-user-handle" id="popoverUserHandle">@67010101 • Sec 01</span>
+                    <button type="button" class="popover-view-profile-link" id="popoverGoProfileBtn">
+                      ดูโปรไฟล์ของคุณ
+                    </button>
+                  </div>
+                </div>
+
+                <div class="profile-popover-divider"></div>
+
+                <div class="profile-popover-actions">
+                  <button type="button" class="popover-logout-item" id="popoverLogoutBtn">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                      <polyline points="16 17 21 12 16 7"></polyline>
+                      <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>ออกจากระบบ (Log Out)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- COURSE HERO HEADER (Matches "1 วิชา / INTRO TO VISUAL DESIGN" + "ปุ่มแจ้งเตือน") -->
+        <section class="course-hero-banner">
+          <div class="course-hero-titles">
+            <p class="course-count-tag" id="courseSubtitleDisplay">1 วิชา</p>
+            <h1 class="course-main-heading" id="courseTitleDisplay">INTRO TO VISUAL DESIGN</h1>
+          </div>
+          <div class="course-hero-actions">
+            <!-- Teacher quick action button (แสดงเฉพาะเมื่อเข้าสู่ระบบเป็นอาจารย์ผู้สอนเท่านั้น) -->
+            <button class="pill-outline-btn teacher-action-Create" id="heroCreateAssignmentBtn" type="button" hidden>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>สร้างใบงานใหม่</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- TAB 1 & 2: STUDENT DASHBOARD & ASSIGNMENTS VIEW                 -->
+        <!-- =============================================================== -->
+        <div id="viewDashboard" class="tab-view active">
+
+          <!-- Assignments Due Outer Panel (Exact white/cream container from Image 2) -->
+          <section class="assignments-showcase-box" aria-labelledby="assignmentsSectionHeading">
+            <div class="showcase-box-header">
+              <div>
+                <h2 id="assignmentsSectionHeading" class="showcase-heading">
+                  <span class="desktop-heading-text">การส่งงาน (Next Assignment Due)</span>
+                  <span class="mobile-heading-text">การ์ดงาน (Assignments Due)</span>
+                </h2>
+              </div>
+
+              <!-- Filter Chips -->
+              <div class="assignment-filter-group" role="group" aria-label="กรองใบงาน">
+                <button class="filter-chip active" data-filter="all" type="button">ทั้งหมด</button>
+                <button class="filter-chip" data-filter="pending" type="button">รอส่งงาน</button>
+                <button class="filter-chip" data-filter="submitted" type="button">ส่งแล้ว / รอตรวจ</button>
+                <button class="filter-chip" data-filter="graded" type="button">ตรวจแล้ว</button>
+              </div>
+            </div>
+
+            <!-- 3-Column Assignment Cards Grid (Matches Image 2 Desktop & Image 1 Mobile) -->
+            <div class="assignments-cards-grid" id="assignmentsGrid">
+              <!-- Populated dynamically by app.js -->
+            </div>
+          </section>
+
+          <!-- Plenty of Whitespace + Pending Submission Section (Matches Image 1 & Image 2) -->
+          <section class="lower-whitespace-grid">
+            <!-- Left Column: Pending Submission / Quick Drag & Drop -->
+            <div class="pending-submission-panel">
+              <div class="pending-header-row">
+                <div>
+                  <h3 class="pending-title">สถานะการส่งงาน</h3>
+                  <p class="pending-subtitle" id="pendingStatusSubtext">Pending Submission</p>
+                </div>
+                <span class="plenty-whitespace-label">Plenty of Whitespace</span>
+              </div>
+
+              <div class="quick-dropzone" id="quickDropzone" role="button" tabindex="0" aria-label="ลากไฟล์มาวางเพื่อส่งงาน">
+                <input type="file" id="quickDropInput" multiple hidden />
+                <div class="upload-arrow-icon">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                </div>
+                <p class="quick-drop-title">Drag &amp; Drop or Click to Upload</p>
+                <p class="quick-drop-desc">คลิกหรือลากไฟล์มาวางที่นี่เพื่อเปิดหน้าต่างส่งงาน (รองรับไฟล์ทุกประเภท + แนบลิงก์ + เลือกเพื่อนกลุ่ม)</p>
+              </div>
+            </div>
+
+            <!-- Right Column: My Recent Submissions & Feedback Summary -->
+            <div class="my-submissions-summary">
+              <div class="summary-header">
+                <h3>รายการส่งงานและสถานะล่าสุดของคุณ</h3>
+                <span class="summary-badge" id="mySubmittedCountBadge">0 รายการ</span>
+              </div>
+              <div class="my-submissions-list" id="mySubmissionsList">
+                <!-- Populated by app.js -->
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- TAB 3: GRADES VIEW (แยกการแสดงผลอัตโนมัติระหว่าง นักศึกษา vs อาจารย์) -->
+        <!-- =============================================================== -->
+        <div id="viewGrades" class="tab-view">
+          <!-- 3A: ฝั่งนักศึกษา (ดูคะแนนเฉพาะของตัวเอง) -->
+          <section class="assignments-showcase-box" id="studentGradesBox">
+            <div class="showcase-box-header">
+              <div>
+                <h2 class="showcase-heading">ผลการเรียนและคอมเมนต์จากอาจารย์ (Grades &amp; Feedback)</h2>
+                <p class="section-sub-desc">แสดงเฉพาะคะแนนและสถานะการส่งงานของบัญชีคุณ (รวมถึงงานกลุ่มที่คุณเป็นสมาชิก)</p>
+              </div>
+              <div class="total-score-pill" id="studentTotalScoreBanner">
+                คะแนนรวม: <strong>0 / 0</strong>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="portal-table">
+                <thead>
+                  <tr>
+                    <th>ใบงาน (Assignment)</th>
+                    <th>ประเภท</th>
+                    <th>กำหนดส่ง (Deadline)</th>
+                    <th>สถานะการส่ง</th>
+                    <th>คะแนนที่ได้</th>
+                    <th>คอมเมนต์จากอาจารย์ (Feedback)</th>
+                    <th>จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="studentGradesTableBody">
+                  <!-- Populated by app.js -->
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- 3B: ฝั่งอาจารย์ (ดูคะแนนรวมของนักศึกษาทั้งหมด แบบการ์ดโชว์รูปโปรไฟล์ 2 คอลัมน์ ตามภาพสเก็ตช์) -->
+          <section class="assignments-showcase-box" id="teacherGradesBox" hidden>
+            <div class="showcase-box-header">
+              <div>
+                <h2 class="showcase-heading">สรุปคะแนนของนักศึกษาทั้งหมด (All Students Grades)</h2>
+                <p class="section-sub-desc">แสดงโปรไฟล์นักศึกษาทุกคนในชั้นเรียน พร้อมคะแนนรวมและรายละเอียดแต่ละใบงาน</p>
+              </div>
+              <div class="total-score-pill" id="teacherClassSummaryBanner">
+                นักศึกษาทั้งหมด: <strong>0 คน</strong>
+              </div>
+            </div>
+
+            <div class="teacher-student-grades-grid" id="teacherStudentsGradesGrid">
+              <!-- Populated by app.js with 2-column student profile cards -->
+            </div>
+          </section>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- TAB 4: INSTRUCTOR PORTAL (สร้างใบงาน / ตรวจงาน / ให้คะแนน / ZIP / CSV) -->
+        <!-- =============================================================== -->
+        <div id="viewInstructor" class="tab-view">
+          <!-- Instructor Top Summary Cards -->
+          <div class="instructor-stats-row">
+            <div class="stat-card">
+              <span class="stat-label">ใบงานทั้งหมดในวิชานี้</span>
+              <strong class="stat-value" id="statTotalAssignments">3</strong>
+              <span class="stat-meta">อนุญาตให้ส่งสายได้ทุกใบงาน</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">งานที่ส่งเข้ามาทั้งหมด</span>
+              <strong class="stat-value" id="statTotalSubmissions">2</strong>
+              <span class="stat-meta" id="statPendingReviewText">รอตรวจ 1 รายการ</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">นักศึกษาในระบบ</span>
+              <strong class="stat-value" id="statTotalStudents">5</strong>
+              <span class="stat-meta">สมัครด้วยรหัสนักศึกษา</span>
+            </div>
+            <div class="stat-card stat-actions-card">
+              <span class="stat-label">ส่งออกข้อมูลและไฟล์งาน</span>
+              <div class="stat-export-btns">
+                <button class="btn-cream-outline" id="exportGradesCsvBtn" type="button" title="ส่งออกคะแนนทั้งหมดเป็นไฟล์ Excel CSV">
+                  📊 ส่งออกคะแนน (Excel CSV)
+                </button>
+                <button class="btn-cream-outline" id="downloadAllZipBtn" type="button" title="ดาวน์โหลดไฟล์งานและใบสรุปทั้งหมดเป็น ZIP">
+                  📦 ดาวน์โหลดงานทั้งหมด (ZIP)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Course Title Editor Bar (Single Course Setting) -->
+          <section class="assignments-showcase-box course-config-bar">
+            <form id="courseConfigForm" class="course-config-form">
+              <div class="form-col">
+                <label for="cfgCourseSubtitle">ป้ายกำกับวิชา (ด้านบน)</label>
+                <input type="text" id="cfgCourseSubtitle" value="1 วิชา" required />
+              </div>
+              <div class="form-col flex-2">
+                <label for="cfgCourseTitle">ชื่อรายวิชาหลัก (Course Title)</label>
+                <input type="text" id="cfgCourseTitle" value="INTRO TO VISUAL DESIGN" required />
+              </div>
+              <div class="form-col">
+                <label for="cfgSemester">ภาคการศึกษา</label>
+                <input type="text" id="cfgSemester" value="ภาคการศึกษา 1/2569" required />
+              </div>
+              <div class="form-col form-col-btn">
+                <button type="submit" class="btn-olive-pill">บันทึกชื่อวิชา</button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Instructor Submissions Management & Grading Table -->
+          <section class="assignments-showcase-box">
+            <div class="showcase-box-header">
+              <div>
+                <h2 class="showcase-heading">รายการส่งงานของนักศึกษา &amp; ตรวจให้คะแนน</h2>
+                <p class="section-sub-desc">คลิกที่ปุ่ม "ตรวจงาน / ให้คะแนน" เพื่อดูไฟล์แนบ ลิงก์ภายนอก รายชื่อสมาชิกกลุ่ม และบันทึกคะแนนพร้อม Feedback</p>
+              </div>
+              <div class="instructor-filter-bar">
+                <select id="instructorAssignmentFilter" class="portal-select" aria-label="เลือกดูตามใบงาน">
+                  <option value="all">ทุกใบงาน (All Assignments)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="portal-table">
+                <thead>
+                  <tr>
+                    <th>ใบงาน</th>
+                    <th>ผู้ส่ง / สมาชิกกลุ่ม</th>
+                    <th>เวลาที่ส่ง &amp; สถานะเวลา</th>
+                    <th>ไฟล์แนบ &amp; ลิงก์</th>
+                    <th>สถานะการตรวจ</th>
+                    <th>คะแนน</th>
+                    <th>การจัดการ (อาจารย์)</th>
+                  </tr>
+                </thead>
+                <tbody id="instructorSubmissionsTableBody">
+                  <!-- Populated by app.js -->
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Instructor Manage Existing Assignments List -->
+          <section class="assignments-showcase-box">
+            <div class="showcase-box-header">
+              <div>
+                <h2 class="showcase-heading">จัดการใบงานทั้งหมด (Manage Assignments)</h2>
+                <p class="section-sub-desc">แก้ไขกำหนดส่ง คะแนนเต็ม รูปแบบงานเดี่ยว/กลุ่ม หรือลบใบงาน</p>
+              </div>
+            </div>
+            <div class="instructor-assignments-list" id="instructorAssignmentsList">
+              <!-- Populated by app.js -->
+            </div>
+          </section>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- TAB 5: STUDENT / USER PROFILE & AUTHENTICATION                  -->
+        <!-- =============================================================== -->
+        <div id="viewProfile" class="tab-view">
+          <section class="assignments-showcase-box">
+            <div class="profile-detail-grid">
+              <div class="profile-avatar-column">
+                <img id="profilePageAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=80" alt="Profile Avatar" class="profile-big-avatar" />
+                <span class="role-badge-large" id="profilePageRoleBadge">นักศึกษา (Student)</span>
+              </div>
+
+              <div class="profile-info-column">
+                <p class="course-count-tag">ข้อมูลผู้ใช้งานปัจจุบัน</p>
+                <h2 class="profile-heading-name" id="profilePageName">Sarah Jenkins (ซาร่าห์)</h2>
+                <p class="profile-meta-line" id="profilePageStudentId">รหัสนักศึกษา: 67010101 • กลุ่มเรียน: Sec 01</p>
+
+                <div class="profile-actions-row">
+                  <button class="btn-navy-pill" id="profileSwitchAccountBtn" type="button">
+                    เข้าสู่ระบบบัญชีอื่น / สมัครสมาชิกใหม่
+                  </button>
+                  <button class="btn-cream-outline" id="profileOpenDbModalBtn" type="button">
+                    ตั้งค่าการเชื่อมต่อฐานข้อมูล Supabase
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- MOBILE BOTTOM NAVIGATION BAR (Exact 4 Tabs from Image 1) -->
+        <nav class="mobile-bottom-nav" aria-label="เมนูด้านล่างสำหรับมือถือ">
+          <button class="m-nav-tab active" data-tab="dashboard" type="button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Dashboard</span>
+          </button>
+          <button class="m-nav-tab" data-tab="assignments" type="button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="8" y1="13" x2="16" y2="13"></line>
+              <line x1="8" y1="17" x2="13" y2="17"></line>
+            </svg>
+            <span>Assignments</span>
+          </button>
+          <button class="m-nav-tab" data-tab="grades" type="button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <span>Grades</span>
+          </button>
+          <button class="m-nav-tab" data-tab="profile" type="button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Profile</span>
+          </button>
+        </nav>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: UPLOAD & SUBMIT ASSIGNMENT MODAL (Matches Image 2 + Full Features) -->
+  <!-- ===================================================================== -->
+  <div class="modal-backdrop" id="submitModalBackdrop" aria-hidden="true">
+    <div class="portal-modal upload-modal-card" role="dialog" aria-modal="true" aria-labelledby="submitModalHeading">
+      <div class="modal-top-bar">
+        <div>
+          <span class="modal-eyebrow" id="submitModalBadge">Upload Modal</span>
+          <h3 id="submitModalHeading" class="modal-title">Assignment 03: Visual Identity</h3>
+          <p id="submitModalMeta" class="modal-subtitle">กำหนดส่ง: 08 Nov 2026 • คะแนนเต็ม 100 คะแนน</p>
+        </div>
+        <button class="modal-close-x" data-close-modal="submitModalBackdrop" type="button" aria-label="ปิด">&times;</button>
+      </div>
+
+      <!-- Late Warning Banner (Shown automatically if current time > due_date) -->
+      <div class="late-warning-banner" id="submitLateWarning" hidden>
+        ⚠️ <strong>เลยกำหนดส่งแล้ว (Late Submission):</strong> ระบบยังอนุญาตให้คุณส่งงานได้ แต่จะบันทึกสถานะเป็น <code>ส่งสาย (Late)</code>
+      </div>
+
+      <!-- Resubmit Notice Banner (Shown if already submitted before) -->
+      <div class="resubmit-info-banner" id="submitResubmitNotice" hidden>
+        🔄 <strong>โหมดส่งงานใหม่ทับไฟล์เดิม (Resubmit):</strong> คุณเคยส่งงานนี้แล้ว การกดส่งอีกครั้งจะอัปเดตไฟล์และลิงก์เป็นเวอร์ชันล่าสุด
+      </div>
+
+      <form id="submissionForm" class="modal-form">
+        <!-- 1. Drag & Drop File Upload Box (Matches Image 2 Upload Modal) -->
+        <div class="upload-drop-area" id="modalDropArea" tabindex="0">
+          <input type="file" id="modalFilePicker" multiple hidden />
+          <div class="upload-icon-circle">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <p class="drop-main-label">Drag &amp; drop your files here</p>
+          <p class="drop-sub-label">รองรับไฟล์ทุกประเภท (PDF, Word, ZIP, รูปภาพ, Figma ฯลฯ เลือกได้หลายไฟล์)</p>
+          <button class="upload-pill-trigger" id="browseFilesBtn" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>อัปโหลด</span>
+          </button>
+        </div>
+
+        <!-- Attached Files Preview List -->
+        <ul class="attached-files-list" id="attachedFilesList"></ul>
+
+        <!-- 2. External Links (Canva, Figma, Google Drive, GitHub, YouTube) -->
+        <div class="form-section-block">
+          <label class="block-label">แนบลิงก์งานภายนอก (Canva, Figma, Google Drive, GitHub, YouTube)</label>
+          <div class="link-add-row">
+            <input type="text" id="extLinkTitleInput" placeholder="ชื่อลิงก์ (เช่น Figma Prototype)" class="input-sm" />
+            <input type="url" id="extLinkUrlInput" placeholder="https://..." class="input-flex" />
+            <button class="btn-cream-outline" id="addExtLinkBtn" type="button">+ เพิ่มลิงก์</button>
+          </div>
+          <ul class="attached-links-list" id="attachedLinksList"></ul>
+        </div>
+
+        <!-- 3. Individual vs Group Mode & Select Friends into Group -->
+        <div class="form-section-block" id="groupSelectionBlock">
+          <div class="group-header-bar">
+            <label class="block-label" id="groupModeTitle">รูปแบบการส่งงาน: เลือกเพื่อนเข้ากลุ่มได้</label>
+            <span class="group-limit-tag" id="groupLimitTag">ส่งเดี่ยว หรือ กลุ่ม</span>
+          </div>
+          <input type="text" id="groupNameInput" placeholder="ตั้งชื่อกลุ่ม (เช่น กลุ่ม Studio A - ถ้าส่งเดี่ยวเว้นว่างได้)" class="full-input mb-8" />
+          <p class="helper-caption">ติ๊กเลือกรายชื่อเพื่อนร่วมกลุ่ม (เพื่อนที่ถูกเลือกจะเห็นสถานะส่งงานและได้คะแนนร่วมกันอัตโนมัติ):</p>
+          <div class="classmates-checkbox-grid" id="classmatesChecklist">
+            <!-- Populated dynamically with classmates -->
+          </div>
+        </div>
+
+        <!-- 4. Note to Instructor -->
+        <div class="form-section-block">
+          <label for="submissionNoteInput" class="block-label">ข้อความถึงอาจารย์ผู้สอน (ไม่บังคับ)</label>
+          <textarea id="submissionNoteInput" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม หรือสิ่งที่แก้ไขในรอบนี้..."></textarea>
+        </div>
+
+        <div class="modal-actions-footer">
+          <button class="btn-cream-outline" data-close-modal="submitModalBackdrop" type="button">ยกเลิก</button>
+          <button class="btn-navy-pill" type="submit" id="finalSubmitWorkBtn">
+            <span>Submit Assignment</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- DEDICATED FULL-PAGE AUTH SCREEN (หน้าล็อกอิน / สมัครสมาชิกแบบแยกหน้าเต็มจอ) -->
+  <!-- ===================================================================== -->
+  <section id="authPageScreen" class="auth-page-screen" hidden>
+    <div class="auth-page-shell">
+      <!-- Left Editorial Visual Panel (Minimal & Elevated Concept) -->
+      <div class="auth-editorial-side">
+        <div class="auth-editorial-top">
+          <div class="brand-monogram">V</div>
+          <div>
+            <p class="brand-eyebrow">STUDENT SUBMISSION PORTAL</p>
+            <p class="brand-course-code">DES-101 • INTRO TO VISUAL DESIGN</p>
+          </div>
+        </div>
+
+        <div class="auth-editorial-middle">
+          <span class="auth-concept-pill">MINIMAL &amp; ELEVATED</span>
+          <h1 class="auth-hero-serif">Student Work &amp; Assignment Portal</h1>
+          <p class="auth-hero-desc">
+            ระบบส่งงานนักศึกษาและตรวจให้คะแนนออนไลน์ รองรับการส่งไฟล์ทุกประเภท แนบลิงก์ภายนอก และเลือกเพื่อนร่วมกลุ่มได้ในที่เดียว
+          </p>
+        </div>
+
+        <!-- Quick 1-Click Demo Login Cards -->
+        <div class="auth-demo-quickbox">
+          <p class="auth-demo-title">⚡ คลิกเข้าสู่ระบบด่วน (บัญชีทดสอบ รหัสผ่าน <code>1234</code>):</p>
+          <div class="auth-demo-buttons">
+            <button type="button" class="demo-account-btn" data-quick-login="67010101">
+              <span class="demo-role-badge">นักศึกษา 1</span>
+              <strong>Sarah Jenkins (67010101)</strong>
+            </button>
+            <button type="button" class="demo-account-btn" data-quick-login="67010102">
+              <span class="demo-role-badge">นักศึกษา 2</span>
+              <strong>นะโม พงศ์พิพัฒน์ (67010102)</strong>
+            </button>
+            <button type="button" class="demo-account-btn teacher" data-quick-login="T001">
+              <span class="demo-role-badge teacher">อาจารย์ผู้สอน</span>
+              <strong>อ.ดร. กิตติพงศ์ (T001)</strong>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Interactive Form Panel (Switches cleanly between Login Page & Register Page) -->
+      <div class="auth-form-side">
+        <div class="auth-form-top-bar">
+          <div class="auth-tabs" role="tablist">
+            <button class="auth-tab-btn active" data-auth-tab="login" type="button">เข้าสู่ระบบ (Login)</button>
+            <button class="auth-tab-btn" data-auth-tab="register" type="button">สมัครสมาชิกใหม่ (Register)</button>
+          </div>
+        </div>
+
+        <!-- VIEW A: LOGIN FORM (แสดงเฉพาะหน้าเข้าสู่ระบบ) -->
+        <form id="loginForm" class="auth-switch-view active">
+          <div class="auth-view-header">
+            <span class="modal-eyebrow">WELCOME BACK</span>
+            <h2 class="auth-view-title">เข้าสู่ระบบส่งงานนักศึกษา</h2>
+            <p class="auth-view-sub">กรอกรหัสนักศึกษา (หรือรหัสอาจารย์) และรหัสผ่านเพื่อเข้าสู่ชั้นเรียน</p>
+          </div>
+
+          <div class="form-section-block">
+            <label for="loginStudentId" class="block-label">รหัสนักศึกษา / รหัสอาจารย์</label>
+            <input type="text" id="loginStudentId" placeholder="เช่น 67010101 หรือ T001 (อาจารย์)" required />
+          </div>
+
+          <div class="form-section-block">
+            <label for="loginPassword" class="block-label">รหัสผ่าน (Password)</label>
+            <input type="password" id="loginPassword" placeholder="กรอกรหัสผ่าน (บัญชีตัวอย่างใช้ 1234)" required />
+          </div>
+
+          <button class="btn-navy-pill full-w auth-submit-btn" type="submit">
+            <span>เข้าสู่ระบบ (Sign In)</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+
+          <div class="auth-bottom-switch">
+            <span>ยังไม่มีบัญชีนักศึกษาใช่ไหม?</span>
+            <button type="button" class="link-switch-btn" data-auth-tab="register">กดที่นี่เพื่อสมัครสมาชิกใหม่ &rarr;</button>
+          </div>
+
+          <div class="auth-cancel-back">
+            <button type="button" class="btn-cream-outline full-w" id="backToPortalFromAuthBtn">
+              &larr; กลับไปยังหน้าส่งงาน (เข้าใช้งานต่อในบัญชีปัจจุบัน)
+            </button>
+          </div>
+        </form>
+
+        <!-- VIEW B: REGISTER FORM (รองรับการสมัครสมาชิกใหม่ทั้ง นักศึกษา และ อาจารย์ผู้สอน) -->
+        <form id="registerForm" class="auth-switch-view">
+          <div class="auth-view-header">
+            <span class="modal-eyebrow">NEW ACCOUNT REGISTRATION</span>
+            <h2 class="auth-view-title">สมัครสมาชิกใหม่ (นักศึกษา / อาจารย์)</h2>
+            <p class="auth-view-sub">เลือกสถานะผู้ใช้งานและกรอกข้อมูลเพื่อสร้างบัญชีใหม่ในระบบ</p>
+          </div>
+
+          <div class="form-section-block">
+            <label for="regRoleSelect" class="block-label">ประเภทบัญชีผู้ใช้งาน (Role)</label>
+            <select id="regRoleSelect" class="portal-select">
+              <option value="student">👩‍🎓 นักเรียน / นักศึกษา (Student)</option>
+              <option value="teacher">👨‍🏫 อาจารย์ผู้สอน (Instructor)</option>
+            </select>
+          </div>
+
+          <div class="form-section-block">
+            <label for="regStudentId" class="block-label" id="regIdLabel">รหัสนักศึกษา / รหัสอาจารย์ (ใช้สำหรับเข้าสู่ระบบ)</label>
+            <input type="text" id="regStudentId" placeholder="เช่น 67010106 หรือ T002" required />
+          </div>
+
+          <div class="form-section-block">
+            <label for="regFullName" class="block-label">ชื่อ-นามสกุล (และชื่อเล่นในวงเล็บ)</label>
+            <input type="text" id="regFullName" placeholder="เช่น พิมพ์ชนก ใจดี (พิม) หรือ อ.สมชาย" required />
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-section-block">
+              <label for="regSection" class="block-label">กลุ่มเรียน / ตำแหน่ง</label>
+              <input type="text" id="regSection" value="Sec 01" required />
+            </div>
+            <div class="form-section-block">
+              <label for="regPassword" class="block-label">ตั้งรหัสผ่าน</label>
+              <input type="password" id="regPassword" placeholder="อย่างน้อย 4 ตัวอักษร" required />
+            </div>
+          </div>
+
+          <button class="btn-olive-pill full-w auth-submit-btn" type="submit">
+            <span>สมัครสมาชิกและเข้าสู่ระบบทันที</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+
+          <div class="auth-bottom-switch">
+            <span>มีบัญชีในระบบแล้ว?</span>
+            <button type="button" class="link-switch-btn" data-auth-tab="login">&larr; กลับไปหน้าเข้าสู่ระบบ (Login)</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 3: INSTRUCTOR CREATE / EDIT ASSIGNMENT MODAL                    -->
+  <!-- ===================================================================== -->
+  <div class="modal-backdrop" id="createAssignmentBackdrop" aria-hidden="true">
+    <div class="portal-modal" role="dialog" aria-modal="true" aria-labelledby="createAssignModalTitle">
+      <div class="modal-top-bar">
+        <div>
+          <span class="modal-eyebrow">INSTRUCTOR MANAGEMENT</span>
+          <h3 id="createAssignModalTitle" class="modal-title">สร้างใบงานใหม่ (Create Assignment)</h3>
+        </div>
+        <button class="modal-close-x" data-close-modal="createAssignmentBackdrop" type="button">&times;</button>
+      </div>
+
+      <form id="createAssignmentForm" class="modal-form">
+        <input type="hidden" id="editAssignmentId" value="" />
+        <div class="form-section-block">
+          <label for="assignTitleInput" class="block-label">ชื่อใบงาน (Assignment Title)</label>
+          <input type="text" id="assignTitleInput" placeholder="เช่น Assignment 05: Brand Guidelines Book" required />
+        </div>
+        <div class="form-section-block">
+          <label for="assignDescInput" class="block-label">โจทย์และรายละเอียดใบงาน</label>
+          <textarea id="assignDescInput" rows="2" placeholder="ระบุสิ่งที่นักศึกษาต้องส่ง รูปแบบไฟล์ หรือเกณฑ์การให้คะแนน..."></textarea>
+        </div>
+        <div class="form-row-2">
+          <div class="form-section-block">
+            <label for="assignDueDateInput" class="block-label">กำหนดวัน-เวลาส่ง (Deadline)</label>
+            <input type="datetime-local" id="assignDueDateInput" required />
+          </div>
+          <div class="form-section-block">
+            <label for="assignMaxScoreInput" class="block-label">คะแนนเต็ม (Points)</label>
+            <input type="number" id="assignMaxScoreInput" value="100" min="1" max="1000" required />
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-section-block">
+            <label for="assignWorkTypeInput" class="block-label">รูปแบบการส่งงาน</label>
+            <select id="assignWorkTypeInput" class="portal-select">
+              <option value="group">ส่งได้ทั้งเดี่ยวและกลุ่ม (เลือกเพื่อนเข้ากลุ่มได้)</option>
+              <option value="individual">งานเดี่ยวเท่านั้น (Individual)</option>
+            </select>
+          </div>
+          <div class="form-section-block">
+            <label for="assignThemeColorInput" class="block-label">สีปุ่มการ์ดใบงาน (Minimal Palette)</label>
+            <select id="assignThemeColorInput" class="portal-select">
+              <option value="navy">Deep Navy (#0F2942 - กรมท่าหลัก)</option>
+              <option value="olive">Olive Moss (#4A5638 - เขียวโอลีฟ)</option>
+              <option value="slate">Soft Slate (#657477 - เทาอมฟ้า)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions-footer">
+          <button class="btn-cream-outline" data-close-modal="createAssignmentBackdrop" type="button">ยกเลิก</button>
+          <button class="btn-navy-pill" type="submit">บันทึกใบงานและแจ้งเตือนนักศึกษา</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 4: INSTRUCTOR GRADING & FEEDBACK MODAL                          -->
+  <!-- ===================================================================== -->
+  <div class="modal-backdrop" id="gradeModalBackdrop" aria-hidden="true">
+    <div class="portal-modal" role="dialog" aria-modal="true" aria-labelledby="gradeModalTitle">
+      <div class="modal-top-bar">
+        <div>
+          <span class="modal-eyebrow">INSTRUCTOR GRADING &amp; FEEDBACK</span>
+          <h3 id="gradeModalTitle" class="modal-title">ตรวจงานและให้คะแนน</h3>
+          <p id="gradeModalSub" class="modal-subtitle"></p>
+        </div>
+        <button class="modal-close-x" data-close-modal="gradeModalBackdrop" type="button">&times;</button>
+      </div>
+
+      <form id="gradeSubmissionForm" class="modal-form">
+        <input type="hidden" id="gradeSubmissionId" />
+        <div id="gradeSubmissionDetailsBox" class="grade-details-box">
+          <!-- Populated dynamically with submitted files, links, group members, and note -->
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-section-block">
+            <label for="gradeScoreInput" class="block-label">ให้คะแนน (<span id="gradeMaxScoreLabel">เต็ม 100</span>)</label>
+            <input type="number" id="gradeScoreInput" step="0.5" min="0" max="1000" required />
+          </div>
+          <div class="form-section-block">
+            <label for="gradeStatusSelect" class="block-label">สถานะการตรวจงาน</label>
+            <select id="gradeStatusSelect" class="portal-select">
+              <option value="graded">✅ ตรวจแล้ว / ผ่าน (Graded)</option>
+              <option value="needs_revision">🔄 ให้แก้ไขและส่งใหม่ (Needs Revision / Resubmit)</option>
+              <option value="pending_review">⏳ รอตรวจ (Pending Review)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-section-block">
+          <label for="gradeFeedbackInput" class="block-label">คอมเมนต์ / ข้อเสนอแนะถึงนักศึกษา (Feedback)</label>
+          <textarea id="gradeFeedbackInput" rows="3" placeholder="เขียนคำชมเชย หรือจุดที่ต้องการให้ปรับปรุงแก้ไข..."></textarea>
+        </div>
+
+        <div class="modal-actions-footer">
+          <button class="btn-cream-outline" data-close-modal="gradeModalBackdrop" type="button">ยกเลิก</button>
+          <button class="btn-navy-pill" type="submit">บันทึกคะแนนและส่งแจ้งเตือนให้นักศึกษา</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 5: SUPABASE DATABASE CONNECTION SETTINGS                        -->
+  <!-- ===================================================================== -->
+  <div class="modal-backdrop" id="dbConfigBackdrop" aria-hidden="true">
+    <div class="portal-modal" role="dialog" aria-modal="true" aria-labelledby="dbModalTitle">
+      <div class="modal-top-bar">
+        <div>
+          <span class="modal-eyebrow">DATABASE &amp; CLOUD STORAGE</span>
+          <h3 id="dbModalTitle" class="modal-title">ตั้งค่าฐานข้อมูล Supabase (PostgreSQL + Storage)</h3>
+        </div>
+        <button class="modal-close-x" data-close-modal="dbConfigBackdrop" type="button">&times;</button>
+      </div>
+
+      <form id="dbConfigForm" class="modal-form">
+        <p class="helper-caption">
+          เว็บนี้ทำงานแบบ <strong>Hybrid Dual-Mode</strong>: ตอนนี้คุณสามารถใช้งานทุกฟีเจอร์ได้ทันทีผ่านฐานข้อมูลในเครื่อง (`LocalStorage`) และเมื่อต้องการออนไลน์จริง เพียงสร้างโปรเจกต์ฟรีที่ <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a> รันไฟล์ <code>supabase_schema.sql</code> แล้วนำ URL กับ Anon Key มาวางด้านล่างนี้:
+        </p>
+        <div class="form-section-block">
+          <label for="supabaseUrlInput" class="block-label">Supabase Project URL (ฝังค่าถาวรในโค้ดแล้ว)</label>
+          <input type="url" id="supabaseUrlInput" value="https://grpjpaaayypojltuzptb.supabase.co" placeholder="https://xxxxxxxxxxxx.supabase.co" />
+        </div>
+        <div class="form-section-block">
+          <label for="supabaseKeyInput" class="block-label">Supabase Publishable / Anon Key (ฝังค่าถาวรในโค้ดแล้ว)</label>
+          <input type="text" id="supabaseKeyInput" value="sb_publishable_rlX9RzfManwjfqYdYMS0Lw_MH_Av8HB" placeholder="sb_publishable_..." />
+        </div>
+        <div class="form-section-block">
+          <div class="group-header-bar">
+            <label class="block-label">คำสั่งสร้างตารางฐานข้อมูล (รันใน Supabase SQL Editor เพียงครั้งเดียว)</label>
+            <button class="copy-snippet-btn" id="copySqlSchemaBtn" type="button">📋 คัดลอกโค้ด SQL ทั้งหมด</button>
+          </div>
+          <p class="helper-caption">หากขึ้นว่ายังไม่ได้สร้างตาราง ให้กดปุ่มคัดลอกด้านบน แล้วนำไปวางในเมนู <strong>SQL Editor</strong> บนเว็บ Supabase แล้วกด <strong>Run</strong></p>
+        </div>
+        <div class="modal-actions-footer">
+          <button class="btn-cream-outline" id="resetDemoDataBtn" type="button">รีเซ็ตข้อมูลตัวอย่างเริ่มต้น</button>
+          <button class="btn-navy-pill" type="submit">บันทึกการเชื่อมต่อฐานข้อมูล</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="portalToast" class="portal-toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
